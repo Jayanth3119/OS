@@ -1,0 +1,345 @@
+# File and Directory Handling Commands
+mkdir new_directory         # Creates a new directory
+ls                          # Lists files and directories
+cd new_directory            # Changes to 'new_directory'
+pwd                         # Prints the current working directory
+rm sample.txt               # Removes 'sample.txt' file
+
+# Text Processing Commands
+cat file1.txt               # Displays content of 'file1.txt'
+echo "Hello, World!"        # Prints text to the screen
+wc file1.txt                # Counts lines, words, and characters in 'file1.txt'
+
+# Process Management Commands
+ps                          # Displays current active processes
+kill -9 <process_id>        # Terminates a process with the given ID
+
+#!/bin/bash
+
+# Variable Handling
+name="Alice"               # Assign a string to a variable
+echo "Hello, $name"        # Print variable
+
+# Arithmetic Operations
+num1=10
+num2=5
+sum=$(expr $num1 + $num2)  # Perform addition
+echo "Sum is: $sum"
+
+# String Handling
+str="Operating Systems"
+echo ${str:0:9}            # Prints 'Operating'
+
+#!/bin/bash
+
+# If-else condition
+num=10
+if [ $num -gt 5 ]; then
+    echo "Number is greater than 5"
+else
+    echo "Number is 5 or less"
+fi
+
+# For loop
+for i in {1..5}; do
+    echo "Loop iteration $i"
+done
+
+# While loop
+count=1
+while [ $count -le 5 ]; do
+    echo "While iteration $count"
+    count=$(expr $count + 1)
+done
+
+#!/bin/bash
+
+# Create and Write to a File
+echo "This is file content" > file.txt
+
+# Read from a File
+cat file.txt
+
+# Copy File
+cp file.txt copied_file.txt
+
+# Append to a File
+echo "Appending this line" >> file.txt
+
+#!/bin/bash
+
+# Display the current date and time
+echo "Current Date and Time: $(date)"
+
+# Display specific date format
+echo "Date in format YYYY-MM-DD: $(date +%F)"
+
+# Display the current month calendar
+cal
+
+
+Here’s the continuation with detailed explanations and code for the remaining experiments, formatted as requested.
+
+---
+
+### Experiment 6: Retrieve System Information
+#### Purpose:
+To use Linux commands that retrieve and display system-related information, such as disk usage and currently logged-in users.
+
+#### Explanation and Code:
+System information retrieval commands give insights into system resources and usage statistics.
+
+```bash
+#!/bin/bash
+
+# Show disk space usage
+echo "Disk Space Usage:"
+df -h
+
+# Show memory usage
+echo "Memory Usage:"
+free -h
+
+# List all logged-in users
+echo "Logged-in Users:"
+who
+
+# Display uptime and system load
+echo "System Uptime and Load:"
+uptime
+```
+
+---
+
+### Experiment 7: Process Scheduling Mechanisms (FCFS, SJF, Priority Queue)
+#### Purpose:
+To implement basic process scheduling algorithms like FCFS, SJF, and Priority Queue in C, simulating CPU scheduling.
+
+#### Explanation and Code:
+Each scheduling algorithm manages how processes are ordered for CPU time. Here is an example code for the **First-Come, First-Served (FCFS)** scheduling algorithm.
+
+```c
+#include <stdio.h>
+
+struct Process {
+    int pid;
+    int burstTime;
+    int waitingTime;
+    int turnaroundTime;
+};
+
+void fcfsScheduling(struct Process proc[], int n) {
+    int totalWaitingTime = 0, totalTurnaroundTime = 0;
+
+    proc[0].waitingTime = 0;
+    for (int i = 1; i < n; i++) {
+        proc[i].waitingTime = proc[i - 1].waitingTime + proc[i - 1].burstTime;
+    }
+
+    for (int i = 0; i < n; i++) {
+        proc[i].turnaroundTime = proc[i].waitingTime + proc[i].burstTime;
+        totalWaitingTime += proc[i].waitingTime;
+        totalTurnaroundTime += proc[i].turnaroundTime;
+    }
+
+    printf("Process\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\n", proc[i].pid, proc[i].burstTime, proc[i].waitingTime, proc[i].turnaroundTime);
+    }
+
+    printf("Average Waiting Time: %.2f\n", (float)totalWaitingTime / n);
+    printf("Average Turnaround Time: %.2f\n", (float)totalTurnaroundTime / n);
+}
+
+int main() {
+    struct Process proc[] = {{1, 24}, {2, 3}, {3, 3}};
+    int n = sizeof(proc) / sizeof(proc[0]);
+    fcfsScheduling(proc, n);
+    return 0;
+}
+```
+
+---
+
+### Experiment 8: Producer-Consumer Problem Using Semaphores
+#### Purpose:
+To solve the producer-consumer problem with semaphores to ensure synchronized access to a shared buffer.
+
+#### Explanation and Code:
+Semaphores control the producer and consumer access to the shared buffer to avoid race conditions.
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define BUFFER_SIZE 5
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0;
+sem_t empty, full, mutex;
+
+void* producer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        sem_wait(&empty);
+        sem_wait(&mutex);
+        buffer[in] = i;
+        printf("Produced: %d\n", i);
+        in = (in + 1) % BUFFER_SIZE;
+        sem_post(&mutex);
+        sem_post(&full);
+    }
+    return NULL;
+}
+
+void* consumer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        sem_wait(&full);
+        sem_wait(&mutex);
+        int item = buffer[out];
+        printf("Consumed: %d\n", item);
+        out = (out + 1) % BUFFER_SIZE;
+        sem_post(&mutex);
+        sem_post(&empty);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+    sem_init(&empty, 0, BUFFER_SIZE);
+    sem_init(&full, 0, 0);
+    sem_init(&mutex, 0, 1);
+
+    pthread_create(&prod, NULL, producer, NULL);
+    pthread_create(&cons, NULL, consumer, NULL);
+
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    sem_destroy(&mutex);
+
+    return 0;
+}
+```
+
+---
+
+### Experiment 9: Readers and Writers Problem
+#### Purpose:
+To solve the readers-writers problem using semaphores to avoid data inconsistency when multiple readers and writers access the shared resource.
+
+#### Explanation and Code:
+Semaphore locks ensure that only one writer or multiple readers can access the shared resource at a time.
+
+```c
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
+
+sem_t rw_mutex, mutex;
+int read_count = 0;
+
+void* reader(void* arg) {
+    int id = *((int*)arg);
+
+    sem_wait(&mutex);
+    read_count++;
+    if (read_count == 1) sem_wait(&rw_mutex);
+    sem_post(&mutex);
+
+    printf("Reader %d: reading\n", id);
+
+    sem_wait(&mutex);
+    read_count--;
+    if (read_count == 0) sem_post(&rw_mutex);
+    sem_post(&mutex);
+
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int id = *((int*)arg);
+
+    sem_wait(&rw_mutex);
+    printf("Writer %d: writing\n", id);
+    sem_post(&rw_mutex);
+
+    return NULL;
+}
+
+int main() {
+    pthread_t readers[5], writers[5];
+    sem_init(&rw_mutex, 0, 1);
+    sem_init(&mutex, 0, 1);
+
+    int ids[5] = {1, 2, 3, 4, 5};
+
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&readers[i], NULL, reader, &ids[i]);
+        pthread_create(&writers[i], NULL, writer, &ids[i]);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        pthread_join(readers[i], NULL);
+        pthread_join(writers[i], NULL);
+    }
+
+    sem_destroy(&rw_mutex);
+    sem_destroy(&mutex);
+
+    return 0;
+}
+```
+
+---
+
+### Experiment 10: Dining Philosophers Problem
+#### Purpose:
+To solve the dining philosophers problem using mutexes, where philosophers alternate between eating and thinking.
+
+#### Explanation and Code:
+This solution prevents deadlock by ensuring that philosophers only pick up both forks when available.
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
+
+#define N 5
+pthread_mutex_t forks[N];
+
+void* philosopher(void* num) {
+    int id = *((int*)num);
+    while (1) {
+        printf("Philosopher %d is thinking.\n", id);
+        sleep(1);
+        pthread_mutex_lock(&forks[id]);
+        pthread_mutex_lock(&forks[(id + 1) % N]);
+        printf("Philosopher %d is eating.\n", id);
+        sleep(1);
+        pthread_mutex_unlock(&forks[id]);
+        pthread_mutex_unlock(&forks[(id + 1) % N]);
+    }
+}
+
+int main() {
+    pthread_t philosophers[N];
+    int ids[N];
+    for (int i = 0; i < N; i++) {
+        pthread_mutex_init(&forks[i], NULL);
+        ids[i] = i;
+        pthread_create(&philosophers[i], NULL, philosopher, &ids[i]);
+    }
+
+    for (int i = 0; i < N; i++) pthread_join(philosophers[i], NULL);
+
+    for (int i = 0; i < N; i++) pthread_mutex_destroy(&forks[i]);
+
+    return 0;
+}
+```
+
+
+
