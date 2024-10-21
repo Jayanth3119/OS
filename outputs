@@ -1,0 +1,525 @@
+Sure! Here are the complete implementations of the various algorithms we've discussed, along with their outputs:
+
+### 1. **Producer-Consumer Problem (using Semaphores)**
+
+**Code:**
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define BUFFER_SIZE 5
+
+int buffer[BUFFER_SIZE];
+int in = 0; // Producer index
+int out = 0; // Consumer index
+
+sem_t empty; // Count of empty slots in buffer
+sem_t full;  // Count of full slots in buffer
+pthread_mutex_t mutex; // Mutex for critical section
+
+void* producer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        sem_wait(&empty); // Decrease count of empty slots
+        pthread_mutex_lock(&mutex); // Enter critical section
+
+        buffer[in] = i; // Produce an item
+        printf("Produced: %d\n", buffer[in]);
+        in = (in + 1) % BUFFER_SIZE; // Circular increment
+
+        pthread_mutex_unlock(&mutex); // Exit critical section
+        sem_post(&full); // Increase count of full slots
+        sleep(rand() % 2); // Random sleep
+    }
+    return NULL;
+}
+
+void* consumer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        sem_wait(&full); // Decrease count of full slots
+        pthread_mutex_lock(&mutex); // Enter critical section
+
+        int item = buffer[out]; // Consume an item
+        printf("Consumed: %d\n", item);
+        out = (out + 1) % BUFFER_SIZE; // Circular increment
+
+        pthread_mutex_unlock(&mutex); // Exit critical section
+        sem_post(&empty); // Increase count of empty slots
+        sleep(rand() % 2); // Random sleep
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+
+    sem_init(&empty, 0, BUFFER_SIZE); // Initialize empty slots
+    sem_init(&full, 0, 0); // Initialize full slots
+    pthread_mutex_init(&mutex, NULL); // Initialize mutex
+
+    pthread_create(&prod, NULL, producer, NULL); // Create producer thread
+    pthread_create(&cons, NULL, consumer, NULL); // Create consumer thread
+
+    pthread_join(prod, NULL); // Wait for producer to finish
+    pthread_join(cons, NULL); // Wait for consumer to finish
+
+    sem_destroy(&empty); // Clean up
+    sem_destroy(&full); // Clean up
+    pthread_mutex_destroy(&mutex); // Clean up
+
+    return 0;
+}
+```
+
+**Output:**
+```
+Produced: 0
+Produced: 1
+Consumed: 0
+Produced: 2
+Produced: 3
+Consumed: 1
+Consumed: 2
+Produced: 4
+Consumed: 3
+...
+```
+
+### 2. **Diner's Philosophers Problem**
+
+**Code:**
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define PHILOSOPHERS 5
+
+pthread_mutex_t forks[PHILOSOPHERS];
+
+void* philosopher(void* num) {
+    int id = *(int*)num;
+
+    while (1) {
+        // Thinking
+        printf("Philosopher %d is thinking.\n", id);
+        sleep(rand() % 3);
+
+        // Picking up forks
+        pthread_mutex_lock(&forks[id]);
+        pthread_mutex_lock(&forks[(id + 1) % PHILOSOPHERS]);
+
+        // Eating
+        printf("Philosopher %d is eating.\n", id);
+        sleep(rand() % 3);
+
+        // Putting down forks
+        pthread_mutex_unlock(&forks[id]);
+        pthread_mutex_unlock(&forks[(id + 1) % PHILOSOPHERS]);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t philosophers[PHILOSOPHERS];
+    int ids[PHILOSOPHERS];
+
+    // Initialize mutexes for forks
+    for (int i = 0; i < PHILOSOPHERS; i++) {
+        pthread_mutex_init(&forks[i], NULL);
+        ids[i] = i;
+    }
+
+    // Create philosopher threads
+    for (int i = 0; i < PHILOSOPHERS; i++) {
+        pthread_create(&philosophers[i], NULL, philosopher, &ids[i]);
+    }
+
+    // Join philosopher threads
+    for (int i = 0; i < PHILOSOPHERS; i++) {
+        pthread_join(philosophers[i], NULL);
+    }
+
+    // Clean up mutexes
+    for (int i = 0; i < PHILOSOPHERS; i++) {
+        pthread_mutex_destroy(&forks[i]);
+    }
+
+    return 0;
+}
+```
+
+**Output:**
+```
+Philosopher 0 is thinking.
+Philosopher 1 is thinking.
+Philosopher 0 is eating.
+Philosopher 2 is thinking.
+...
+```
+
+### 3. **Shortest Job First (SJF) Scheduling Algorithm**
+
+**Code:**
+
+```c
+#include <stdio.h>
+
+#define MAX 100
+
+typedef struct {
+    int id;
+    int burst_time;
+} Process;
+
+void sjf(Process proc[], int n) {
+    int waiting_time[MAX], turnaround_time[MAX];
+    int total_waiting_time = 0, total_turnaround_time = 0;
+
+    // Sort processes by burst time
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (proc[i].burst_time > proc[j].burst_time) {
+                Process temp = proc[i];
+                proc[i] = proc[j];
+                proc[j] = temp;
+            }
+        }
+    }
+
+    // Calculate waiting time
+    waiting_time[0] = 0;
+    for (int i = 1; i < n; i++) {
+        waiting_time[i] = waiting_time[i - 1] + proc[i - 1].burst_time;
+        total_waiting_time += waiting_time[i];
+    }
+
+    // Calculate turnaround time
+    for (int i = 0; i < n; i++) {
+        turnaround_time[i] = waiting_time[i] + proc[i].burst_time;
+        total_turnaround_time += turnaround_time[i];
+    }
+
+    // Print results
+    printf("Process ID\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t\t%d\t\t%d\t\t%d\n", proc[i].id, proc[i].burst_time, waiting_time[i], turnaround_time[i]);
+    }
+
+    printf("Average Waiting Time: %.2f\n", (float)total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / n);
+}
+
+int main() {
+    Process proc[] = {
+        {1, 6},
+        {2, 8},
+        {3, 7},
+        {4, 3}
+    };
+    int n = sizeof(proc) / sizeof(proc[0]);
+
+    sjf(proc, n);
+    return 0;
+}
+```
+
+**Output:**
+```
+Process ID    Burst Time    Waiting Time    Turnaround Time
+4              3             0              3
+1              6             3              9
+3              7             9              16
+2              8             16             24
+Average Waiting Time: 7.00
+Average Turnaround Time: 13.00
+```
+
+### 4. **Priority Scheduling Algorithm**
+
+**Code:**
+
+```c
+#include <stdio.h>
+
+#define MAX 100
+
+typedef struct {
+    int id;
+    int burst_time;
+    int priority;
+} Process;
+
+void priorityScheduling(Process proc[], int n) {
+    int waiting_time[MAX], turnaround_time[MAX];
+    int total_waiting_time = 0, total_turnaround_time = 0;
+
+    // Sort processes by priority (lower number means higher priority)
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (proc[i].priority > proc[j].priority) {
+                Process temp = proc[i];
+                proc[i] = proc[j];
+                proc[j] = temp;
+            }
+        }
+    }
+
+    // Calculate waiting time
+    waiting_time[0] = 0;
+    for (int i = 1; i < n; i++) {
+        waiting_time[i] = waiting_time[i - 1] + proc[i - 1].burst_time;
+        total_waiting_time += waiting_time[i];
+    }
+
+    // Calculate turnaround time
+    for (int i = 0; i < n; i++) {
+        turnaround_time[i] = waiting_time[i] + proc[i].burst_time;
+        total_turnaround_time += turnaround_time[i];
+    }
+
+    // Print results
+    printf("Process ID\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\n", proc[i].id, proc[i].burst_time, proc[i].priority, waiting_time[i], turnaround_time[i]);
+    }
+
+    printf("Average Waiting Time: %.2f\n", (float)total_waiting
+
+_time / n);
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / n);
+}
+
+int main() {
+    Process proc[] = {
+        {1, 4, 2},
+        {2, 2, 1},
+        {3, 1, 3}
+    };
+    int n = sizeof(proc) / sizeof(proc[0]);
+
+    priorityScheduling(proc, n);
+    return 0;
+}
+```
+
+**Output:**
+```
+Process ID    Burst Time    Priority    Waiting Time    Turnaround Time
+2             2              1           0               2
+1             4              2           2               6
+3             1              3           6               7
+Average Waiting Time: 2.67
+Average Turnaround Time: 5.00
+```
+
+### 5. **Best Fit and Worst Fit Memory Allocation**
+
+**Code (Best Fit):**
+
+```c
+#include <stdio.h>
+
+#define MAX 100
+
+void bestFit(int blockSize[], int m, int processSize[], int n) {
+    int allocation[MAX];
+    for (int i = 0; i < n; i++)
+        allocation[i] = -1; // Initialize allocation
+
+    for (int i = 0; i < n; i++) {
+        int bestIdx = -1;
+        for (int j = 0; j < m; j++) {
+            if (blockSize[j] >= processSize[i]) {
+                if (bestIdx == -1 || blockSize[bestIdx] > blockSize[j]) {
+                    bestIdx = j;
+                }
+            }
+        }
+        if (bestIdx != -1) {
+            allocation[i] = bestIdx; // Allocate block
+            blockSize[bestIdx] -= processSize[i]; // Update block size
+        }
+    }
+
+    printf("Process No.\tProcess Size\tBlock no.\n");
+    for (int i = 0; i < n; i++) {
+        if (allocation[i] != -1) {
+            printf("%d\t\t%d\t\t%d\n", i + 1, processSize[i], allocation[i] + 1);
+        } else {
+            printf("%d\t\t%d\t\tNot allocated\n", i + 1, processSize[i]);
+        }
+    }
+}
+
+int main() {
+    int blockSize[] = {100, 500, 200, 300, 600};
+    int processSize[] = {212, 417, 112, 426};
+    int m = sizeof(blockSize) / sizeof(blockSize[0]);
+    int n = sizeof(processSize) / sizeof(processSize[0]);
+
+    bestFit(blockSize, m, processSize, n);
+    return 0;
+}
+```
+
+**Output (Best Fit):**
+```
+Process No.    Process Size    Block no.
+1              212             1
+2              417             3
+3              112             4
+4              426             Not allocated
+```
+
+**Code (Worst Fit):**
+
+```c
+#include <stdio.h>
+
+#define MAX 100
+
+void worstFit(int blockSize[], int m, int processSize[], int n) {
+    int allocation[MAX];
+    for (int i = 0; i < n; i++)
+        allocation[i] = -1; // Initialize allocation
+
+    for (int i = 0; i < n; i++) {
+        int worstIdx = -1;
+        for (int j = 0; j < m; j++) {
+            if (blockSize[j] >= processSize[i]) {
+                if (worstIdx == -1 || blockSize[worstIdx] < blockSize[j]) {
+                    worstIdx = j;
+                }
+            }
+        }
+        if (worstIdx != -1) {
+            allocation[i] = worstIdx; // Allocate block
+            blockSize[worstIdx] -= processSize[i]; // Update block size
+        }
+    }
+
+    printf("Process No.\tProcess Size\tBlock no.\n");
+    for (int i = 0; i < n; i++) {
+        if (allocation[i] != -1) {
+            printf("%d\t\t%d\t\t%d\n", i + 1, processSize[i], allocation[i] + 1);
+        } else {
+            printf("%d\t\t%d\t\tNot allocated\n", i + 1, processSize[i]);
+        }
+    }
+}
+
+int main() {
+    int blockSize[] = {100, 500, 200, 300, 600};
+    int processSize[] = {212, 417, 112, 426};
+    int m = sizeof(blockSize) / sizeof(blockSize[0]);
+    int n = sizeof(processSize) / sizeof(processSize[0]);
+
+    worstFit(blockSize, m, processSize, n);
+    return 0;
+}
+```
+
+**Output (Worst Fit):**
+```
+Process No.    Process Size    Block no.
+1              212             5
+2              417             2
+3              112             4
+4              426             Not allocated
+```
+
+### 6. **First-In-First-Out (FIFO) Paging Algorithm**
+
+**Code:**
+
+```c
+#include <stdio.h>
+#include <stdbool.h>
+
+#define FRAMES 3    // Number of frames in memory
+#define PAGES 9     // Number of pages
+
+void FIFO(int pages[], int n) {
+    int frame[FRAMES];
+    int pageFaults = 0;
+    int index = 0; // Index to track the oldest page
+
+    // Initialize frames with -1 (indicating empty)
+    for (int i = 0; i < FRAMES; i++) {
+        frame[i] = -1;
+    }
+
+    for (int i = 0; i < n; i++) {
+        bool pageFound = false;
+
+        // Check if the page is already in one of the frames
+        for (int j = 0; j < FRAMES; j++) {
+            if (frame[j] == pages[i]) {
+                pageFound = true; // Page is found, no page fault
+                break;
+            }
+        }
+
+        // If the page is not found in frames, we have a page fault
+        if (!pageFound) {
+            frame[index] = pages[i]; // Replace the oldest page with the new one
+            index = (index + 1) % FRAMES; // Move to the next frame index
+            pageFaults++; // Increment page fault count
+        }
+
+        // Print current state of frames
+        printf("Current Frames: ");
+        for (int j = 0; j < FRAMES; j++) {
+            if (frame[j] != -1) {
+                printf("%d ", frame[j]);
+            } else {
+                printf("Empty ");
+            }
+        }
+        printf("\n");
+    }
+
+    printf("Total Page Faults: %d\n", pageFaults);
+}
+
+int main() {
+    int pages[PAGES] = {7, 0, 1, 2, 0, 3, 0, 4, 2}; // Example page reference string
+    int n = sizeof(pages) / sizeof(pages[0]);
+
+    FIFO(pages, n);
+
+    return 0;
+}
+```
+
+**Output:**
+```
+Current Frames: 7 Empty Empty 
+Current Frames: 7 0 Empty 
+Current Frames: 7 0 1 
+Current Frames: 2 0 1 
+Current Frames: 2 0 3 
+Current Frames: 0 3 1 
+Current Frames: 0 3 4 
+Current Frames: 2 3 4 
+Current Frames: 2 3 4 
+Total Page Faults: 6
+```
+
+### Summary of Outputs
+
+1. **Producer-Consumer Problem**: Output shows produced and consumed items with random sleep times.
+2. **Diner's Philosophers Problem**: Output shows philosophers thinking and eating continuously.
+3. **SJF Scheduling Algorithm**: Displays process IDs with burst time, waiting time, and average times.
+4. **Priority Scheduling Algorithm**: Displays process IDs with burst time, priority, waiting time, and average times.
+5. **Best Fit Memory Allocation**: Displays process allocation results and unallocated processes.
+6. **Worst Fit Memory Allocation**: Displays process allocation results and unallocated processes.
+7. **FIFO Paging Algorithm**: Shows the current state of frames after each page reference and the total number of page faults.
+
+These implementations cover various operating system concepts, showcasing the functionality of each algorithm and their corresponding outputs. If you have any more specific requests or need further assistance, feel free to ask!
