@@ -1,0 +1,554 @@
+Here are neatly formatted programs along with brief descriptions of their output:
+
+---
+
+### 1.A IP Address of Client at Client Side
+```java
+import java.net.*;
+import java.io.*;
+
+class ic {
+    public static void main(String args[]) throws IOException {
+        InetAddress ia = InetAddress.getLocalHost();
+        System.out.println("The client system address is: " + ia);
+    }
+}
+```
+**Output**: Displays the IP address of the client system.
+
+---
+
+### 1.B IP Address of Client at Server Side
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+
+class ci {
+    public static void main(String args[]) throws IOException {
+        InetAddress ia = InetAddress.getLocalHost();
+        Socket soc = new Socket(ia, 8020);
+        PrintStream ps = new PrintStream(soc.getOutputStream());
+        ps.println(ia);
+    }
+}
+```
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+
+class si {
+    public static void main(String args[]) throws IOException {
+        ServerSocket ss = new ServerSocket(8020);
+        System.out.println("Server is listening...");
+        Socket s = ss.accept();
+        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        String ip = br.readLine();
+        System.out.println("IP address of the client system is: " + ip);
+        s.close();
+    }
+}
+```
+**Output**: Server displays the IP address of the client system once a connection is made.
+
+---
+
+### 2 Date and Time of Server at Client
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+class ds {
+    public static void main(String args[]) throws IOException {
+        ServerSocket ss = new ServerSocket(8020);
+        Socket s = ss.accept();
+        PrintStream ps = new PrintStream(s.getOutputStream());
+        Date d = new Date();
+        ps.println(d);
+        ps.close();
+    }
+}
+```
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+
+class dc {
+    public static void main(String args[]) throws IOException {
+        InetAddress ia = InetAddress.getLocalHost();
+        Socket soc = new Socket(ia, 8020);
+        BufferedReader br = new BufferedReader(new InputStreamReader(soc.getInputStream()));
+        String sdate = br.readLine();
+        System.out.println("The data in the server is: " + sdate);
+    }
+}
+```
+**Output**: Client displays the current date and time received from the server.
+
+---
+
+### 3 UDP Implementation
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+
+public class udps {
+    public static void main(String[] args) throws Exception {
+        DatagramSocket serverSocket = new DatagramSocket(9876);
+        byte[] receiveBuffer = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+        serverSocket.receive(receivePacket);
+        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
+        System.out.println("Received from client: " + receivedMessage);
+        String serverMessage = "Echo: " + receivedMessage;
+        DatagramPacket sendPacket = new DatagramPacket(serverMessage.getBytes(), serverMessage.length(), receivePacket.getAddress(), receivePacket.getPort());
+        serverSocket.send(sendPacket);
+        System.out.println("Sent to client: " + serverMessage);
+    }
+}
+```
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class udpc {
+    public static void main(String[] args) throws Exception {
+        DatagramSocket clientSocket = new DatagramSocket();
+        InetAddress serverAddress = InetAddress.getByName("localhost");
+        byte[] receiveBuffer = new byte[1024];
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter a message to send to the server:");
+        String message = scanner.nextLine();
+        clientSocket.send(new DatagramPacket(message.getBytes(), message.length(), serverAddress, 9876));
+        System.out.println("Sent to server: " + message);
+        clientSocket.receive(new DatagramPacket(receiveBuffer, receiveBuffer.length));
+        System.out.println("Received from server: " + new String(receiveBuffer, 0, new DatagramPacket(receiveBuffer, receiveBuffer.length).getLength()));
+        clientSocket.close();
+        scanner.close();
+    }
+}
+```
+**Output**: Client sends a message to the server, and the server echoes the message back to the client.
+
+---
+
+If you'd like more programs or outputs, let me know!
+
+Continuing with more programs from the file:
+
+---
+
+### 4.A Echo Client-Server Program
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+
+class es {
+    public static void main(String args[]) throws UnknownHostException, IOException {
+        String b;
+        ServerSocket ss = new ServerSocket(2000);
+        Socket soc = ss.accept();
+        BufferedReader br = new BufferedReader(new InputStreamReader(soc.getInputStream()));
+        PrintStream ps = new PrintStream(soc.getOutputStream());
+        System.out.println("Connected for echo:");
+        while ((b = br.readLine()) != null) {
+            if (b.equals("end")) {
+                System.out.println("Client disconnected");
+                br.close();
+                break;
+            } else {
+                ps.println(b);
+            }
+        }
+    }
+}
+```
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+
+class ec {
+    public static void main(String args[]) throws UnknownHostException, IOException {
+        String b;
+        Socket s = new Socket(InetAddress.getLocalHost(), 2000);
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader b2 = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintStream ps = new PrintStream(s.getOutputStream());
+        System.out.println("Start echoing... type 'end' to terminate");
+        while ((b = b1.readLine()) != null) {
+            ps.println(b);
+            if (b.equals("end")) {
+                break;
+            } else {
+                System.out.println("echoed from server:" + b2.readLine());
+            }
+        }
+    }
+}
+```
+**Output**: The client sends messages to the server, and the server echoes them back. When "end" is sent, the connection is terminated.
+
+---
+
+### 4.B Chat between Client and Server
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+
+public class cc {
+    public static void main(String args[]) throws Exception {
+        Socket s = new Socket(InetAddress.getLocalHost(), 2000);
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintStream ps = new PrintStream(s.getOutputStream());
+        BufferedReader b2 = new BufferedReader(new InputStreamReader(System.in));
+        String b;
+        System.out.print("Client : ");
+        b = b2.readLine();
+        ps.println(b);
+        b = b1.readLine();
+        System.out.print("Server : " + b + "\n");
+        if (b.equalsIgnoreCase("BYE")) {
+            s.close();
+        }
+        b1.close();
+        ps.close();
+        b2.close();
+    }
+}
+```
+
+#### Server
+```java
+import java.net.*;
+import java.io.*;
+
+public class cs {
+    public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(2000);
+        Socket s = ss.accept();
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintStream ps = new PrintStream(s.getOutputStream());
+        BufferedReader b2 = new BufferedReader(new InputStreamReader(System.in));
+        String b;
+        b = b1.readLine();
+        System.out.println("Client : " + b);
+        System.out.print("Server : ");
+        b = b2.readLine();
+        ps.println(b);
+        ss.close();
+        s.close();
+        b1.close();
+        ps.close();
+        b2.close();
+    }
+}
+```
+**Output**: The client and server exchange messages. The server responds to the client's messages. The chat ends if "BYE" is sent.
+
+---
+
+### 4.C FTP using TCP
+
+#### Client
+```java
+import java.net.*;
+import java.io.*;
+
+public class ftpc {
+    public static void main(String args[]) throws Exception {
+        Socket s = new Socket(InetAddress.getLocalHost(), 4000);
+        System.out.println("Enter the file name");
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(System.in));
+        String fname = b1.readLine();
+        OutputStream os = s.getOutputStream();
+        PrintWriter pw = new PrintWriter(os, true);
+        pw.println(fname);
+        InputStream is = s.getInputStream();
+        BufferedReader b2 = new BufferedReader(new InputStreamReader(is));
+        String str;
+        while ((str = b2.readLine()) != null) {
+            System.out.println(str);
+        }
+        pw.close();
+        b2.close();
+        b1.close();
+    }
+}
+```
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+
+public class ftps {
+    public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(4000);
+        System.out.println("Server ready for connection");
+        Socket s = ss.accept();
+        InputStream is = s.getInputStream();
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(is));
+        String b = b1.readLine();
+        BufferedReader b2 = new BufferedReader(new FileReader(b));
+        OutputStream os = s.getOutputStream();
+        PrintWriter pw = new PrintWriter(os, true);
+        String str;
+        while ((str = b2.readLine()) != null) {
+            pw.println(str);
+        }
+        s.close();
+        ss.close();
+        pw.close();
+        b1.close();
+        b2.close();
+    }
+}
+```
+**Output**: The client sends a filename to the server, and the server sends back the contents of the file.
+
+---
+
+### 5 Daemon Thread Implementation
+```java
+public class dt extends Thread {
+    public dt(String name) {
+        super(name);
+    }
+
+    public void run() {
+        if (Thread.currentThread().isDaemon()) {
+            System.out.println(getName() + " is Daemon thread");
+        } else {
+            System.out.println(getName() + " is User thread");
+        }
+    }
+
+    public static void main(String[] args) {
+        dt t1 = new dt("t1");
+        dt t2 = new dt("t2");
+        dt t3 = new dt("t3");
+        t1.setDaemon(true);
+        t1.start();
+        t2.start();
+        t3.setDaemon(true);
+        t3.start();
+    }
+}
+```
+**Output**: Outputs the thread names, indicating whether each is a daemon or a user thread.
+
+---
+
+### 6 Sliding Window Protocol Implementation
+
+#### Server
+```java
+import java.io.*;
+import java.net.*;
+
+public class sws {
+    public static void main(String[] args) throws IOException {
+        ServerSocket ss = new ServerSocket(8069);
+        Socket s = ss.accept();
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader b2 = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintWriter pw = new PrintWriter(s.getOutputStream(), true);
+        String[] b = new String[8];
+        int bp = 0, ws = 8;
+        while (true) {
+            System.out.print("Enter number of frames: ");
+            int n = Integer.parseInt(b1.readLine());
+            pw.println(n);
+            System.out.println("Enter " + n + " messages:");
+            for (int i = 0; i < n; i++) {
+                b[bp] = b1.readLine();
+                pw.println(b[bp]);
+                bp = (bp + 1) % 8;
+            }
+            ws -= n;
+            System.out.println("Acknowledgment received for " + Integer.parseInt(b2.readLine()) + " frames");
+            ws += n;
+            System.out.print("Send more frames? (yes/no): ");
+            if (!"yes".equalsIgnoreCase(b1.readLine())) break;
+        }
+        pw.close();
+        b2.close();
+        b1.close();
+        s.close();
+        ss.close();
+    }
+}
+```
+
+#### Client
+```java
+import java.io.*;
+import java.net.*;
+
+public class swc {
+    public static void main(String[] args) throws IOException {
+        Socket s = new Socket(InetAddress.getLocalHost(), 8069);
+        BufferedReader b1 = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintWriter pw = new PrintWriter(s.getOutputStream(), true);
+        String[] b = new String[8];
+        int bp = -1, n, rs = 8;
+        String cs;
+        do {
+            n = Integer.parseInt(b1.readLine());
+            if (n <= rs - 1) {
+                for (int i = 1; i <= n; i++) {
+                    bp = (bp + 1) % 8;
+                    b[bp] = b1.readLine();
+                    System.out.println("The received frame " + bp + " is: " + b[bp]);
+                }
+                rs -= n;
+                System.out.println("\nAcknowledgment sent\n");
+                pw.println(bp + 1);
+                rs += n;
+            } else {
+                break;
+            }
+            cs = b1.readLine();
+        } while ("yes".equalsIgnoreCase(cs));
+    }
+}
+```
+**Output**: Implements the sliding window protocol between a client and server, displaying the frames sent and acknowledged.
+
+---
+
+Let me know if you would like further assistance with additional programs!
+
+Continuing with the next set of programs from the file:
+
+---
+
+### 7 ARP (Address Resolution Protocol) Implementation
+```java
+import java.net.*;
+import java.util.*;
+
+public class ma {
+    public static void main(String[] args) throws NullPointerException, UnknownHostException, SocketException {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter System Name or IP Address: ");
+        String s = sc.nextLine();
+        InetAddress ia = InetAddress.getByName(s);
+        System.out.println("Address: " + ia);
+        NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
+        byte[] b = ni.getHardwareAddress();
+        System.out.print("MAC Address: ");
+        for (int i = 0; i < b.length; i++) {
+            System.out.format("%02X%s", b[i], (i < b.length - 1) ? "-" : "");
+        }
+        System.out.println();
+        sc.close();
+    }
+}
+```
+**Output**: The program prompts the user to input a system name or IP address, then displays the corresponding MAC address.
+
+---
+
+### 8.A Tracert Command Implementation
+```java
+import java.io.*;
+
+public class tr {
+    public static void runSystemCommand(String command) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder("cmd.exe", "/c", command);
+        Process p = builder.start();
+        BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String s;
+        while ((s = b.readLine()) != null) {
+            System.out.println(s);
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        String ip = "www.google.co.in";
+        runSystemCommand("tracert " + ip);
+    }
+}
+```
+**Output**: Runs the `tracert` command to trace the route taken by packets to reach `www.google.co.in` and displays each hop along the route.
+
+---
+
+### 8.B Ping Command Implementation
+```java
+import java.io.*;
+import java.util.*;
+
+public class p {
+    public static void runSystemCommand(String Command) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder("cmd.exe", "/c", Command);
+        Process p = builder.start();
+        BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String s;
+        while ((s = b.readLine()) != null) {
+            System.out.println(s);
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        String Ip = "localhost";
+        runSystemCommand("ping " + Ip);
+        Date date = new Date();
+        System.out.println(date);
+    }
+}
+```
+**Output**: Executes the `ping` command to check connectivity to `localhost`, displaying the ping results along with the current date and time.
+
+---
+
+### 9 HTTP Protocol Implementation
+```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class http {
+    public static void main(String[] args) throws IOException, URISyntaxException {
+        String s = "http://www.google.com";
+        String f = "abc.html";
+        URI uri = new URI(s);
+        URL u = uri.toURL();
+        URLConnection c = u.openConnection();
+        c.connect();
+        InputStreamReader is = new InputStreamReader(c.getInputStream());
+        FileWriter fw = new FileWriter(f);
+        int i;
+        while ((i = is.read()) != -1) {
+            fw.write((char) i);
+        }
+        fw.close();
+        is.close();
+    }
+}
+```
+**Output**: Downloads the content of `http://www.google.com` and saves it to a local file named `abc.html`.
+
+---
+
+This completes the programs from the file. If you'd like further explanation or additional details about these programs, feel free to ask!
